@@ -1,5 +1,4 @@
-"use strict";
-import fetch from 'node-fetch';
+import { request } from 'undici';
 import lodash from 'lodash';
 import { generateRandomIP, randomUserAgent } from './utils.js';
 import { copyHeaders as copyHdrs } from './copyHeaders.js';
@@ -22,17 +21,15 @@ function randomVia() {
 
 export async function processRequest(request, reply) {
     let url = request.query.url;
-    const randomIP = generateRandomIP();
-    const userAgent = randomUserAgent();
-    const vid = randomVia();
 
     if (!url) {
-        
+        const ipAddress = generateRandomIP();
+        const ua = randomUserAgent();
         const hdrs = {
             ...lodash.pick(request.headers, ['cookie', 'dnt', 'referer']),
-            'x-forwarded-for': randomIP,
-            'user-agent': userAgent,
-            'via': vid,
+            'x-forwarded-for': ipAddress,
+            'user-agent': ua,
+            'via': randomVia(),
         };
 
         Object.entries(hdrs).forEach(([key, value]) => reply.header(key, value));
@@ -40,43 +37,41 @@ export async function processRequest(request, reply) {
         return reply.send(`bandwidth-hero-proxy`);
     }
 
-
     request.params.url = decodeURIComponent(url);
     request.params.webp = !request.query.jpeg;
     request.params.grayscale = request.query.bw != '0';
     request.params.quality = parseInt(request.query.l, 10) || 40;
 
-    
+    const randomIP = generateRandomIP();
+    const userAgent = randomUserAgent();
 
     try {
-        const response = await fetch(request.params.url, {
+        const { body, statusCode, headers } = await request(request.params.url, {
             method: "GET",
             headers: {
                 ...lodash.pick(request.headers, ['cookie', 'dnt', 'referer']),
-               'x-forwarded-for': randomIP,
-               'user-agent': userAgent,
-               'via': vid,
+                'user-agent': userAgent,
+                'x-forwarded-for': randomIP,
+                'via': randomVia(),
             },
-            timeout: 10000,
-            follow: 5, // max redirects
-            compress: false,
+            maxRedirections: 5,
         });
 
-        if (!response.ok) {
+        if (statusCode !== 200) {
             return handleRedirect(request, reply);
         }
 
-        copyHdrs(response, reply);
+        copyHdrs({ headers }, reply);
         reply.header('content-encoding', 'identity');
-        request.params.originType = response.headers.get('content-type') || '';
-        request.params.originSize = response.headers.get('content-length'), 10 || 0;
+        request.params.originType = headers['content-type'] || '';
+        request.params.originSize = parseInt(headers['content-length'], 10) || 0;
 
-        const input = { body: response.body }; // Wrap the stream in an object
+        const input = { body }; // Wrap the stream in an object
 
         if (checkCompression(request)) {
             return applyCompression(request, reply, input);
         } else {
-            return performBypass(request, reply, response.body);
+            return performBypass(request, reply, body);
         }
     } catch (err) {
         return handleRedirect(request, reply);

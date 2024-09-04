@@ -46,32 +46,37 @@ export async function processRequest(request, reply) {
     const userAgent = randomUserAgent();
 
     try {
-        const { body, statusCode, headers } = await request(request.params.url, {
+        const response = await request(request.params.url, {
             
             headers: {
                 ...lodash.pick(request.headers, ['cookie', 'dnt', 'referer']),
-                'user-agent': userAgent,
-                'x-forwarded-for': randomIP,
-                'via': randomVia(),
+               'x-forwarded-for': randomIP,
+               'user-agent': userAgent,
+               'via': randomVia(),
             },
-            maxRedirections: 5,
+            timeout: 10000,
+            follow: 5, // max redirects
+            compress: false,
         });
 
-        if (statusCode !== 200) {
-            return handleRedirect(request, reply);
-        }
+        if (response.statusCode >= 400)
+        return redirect(req, res);
 
-        copyHdrs({ headers }, reply);
+  // handle redirects
+      if (response.statusCode >= 300 && origin.headers.location)
+         return redirect(req, res);
+
+        copyHdrs(response, reply);
         reply.header('content-encoding', 'identity');
-        request.params.originType = headers['content-type'] || '';
-        request.params.originSize = parseInt(headers['content-length'], 10) || 0;
+        request.params.originType = response.headers('content-type') || '';
+        request.params.originSize = response.headers('content-length'), 10 || 0;
 
-        const input = { body }; // Wrap the stream in an object
+        const input = { body: response.body }; // Wrap the stream in an object
 
         if (checkCompression(request)) {
             return applyCompression(request, reply, input);
         } else {
-            return performBypass(request, reply, body);
+            return performBypass(request, reply, response.body);
         }
     } catch (err) {
         return handleRedirect(request, reply);

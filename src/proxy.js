@@ -1,4 +1,4 @@
-import { request } from 'undici';
+import { request } from 'undici'
 import lodash from 'lodash';
 import { generateRandomIP, randomUserAgent } from './utils.js';
 import { copyHeaders as copyHdrs } from './copyHeaders.js';
@@ -47,7 +47,7 @@ export async function processRequest(request, reply) {
 
     try {
         const { body, statusCode, headers } = await request(request.params.url, {
-            method: "GET",
+            
             headers: {
                 ...lodash.pick(request.headers, ['cookie', 'dnt', 'referer']),
                 'user-agent': userAgent,

@@ -54,9 +54,9 @@ export async function processRequest(request, reply) {
                'user-agent': userAgent,
                'via': randomVia(),
             },
-            timeout: 10000,
-            follow: 5, // max redirects
-            compress: false,
+        
+        
+            maxRedirections: 5,
         });
 
         if (response.statusCode >= 400)

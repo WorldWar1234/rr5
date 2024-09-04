@@ -1,4 +1,4 @@
-import { request } from 'undici'
+import { request as undiciRequest } from 'undici';
 import lodash from 'lodash';
 import { generateRandomIP, randomUserAgent } from './utils.js';
 import { copyHeaders as copyHdrs } from './copyHeaders.js';
@@ -39,37 +39,36 @@ export async function processRequest(request, reply) {
 
     request.params.url = decodeURIComponent(url);
     request.params.webp = !request.query.jpeg;
-    request.params.grayscale = request.query.bw != '0';
+    request.params.grayscale = request.query.bw !== '0';
     request.params.quality = parseInt(request.query.l, 10) || 40;
 
     const randomIP = generateRandomIP();
     const userAgent = randomUserAgent();
 
     try {
-        const response = await request(request.params.url, {
-            
+        const response = await undiciRequest(request.params.url, {
             headers: {
                 ...lodash.pick(request.headers, ['cookie', 'dnt', 'referer']),
-               'x-forwarded-for': randomIP,
-               'user-agent': userAgent,
-               'via': randomVia(),
+                'x-forwarded-for': randomIP,
+                'user-agent': userAgent,
+                'via': randomVia(),
             },
-        
-        
             maxRedirections: 5,
         });
 
-        if (response.statusCode >= 400)
-        return redirect(req, res);
+        if (response.statusCode >= 400) {
+            return handleRedirect(request, reply);
+        }
 
-  // handle redirects
-      if (response.statusCode >= 300 && origin.headers.location)
-         return redirect(req, res);
+        // Handle redirects
+        if (response.statusCode >= 300 && response.headers.location) {
+            return handleRedirect(request, reply);
+        }
 
         copyHdrs(response, reply);
         reply.header('content-encoding', 'identity');
-        request.params.originType = response.headers('content-type') || '';
-        request.params.originSize = response.headers('content-length'), 10 || 0;
+        request.params.originType = response.headers['content-type'] || '';
+        request.params.originSize = parseInt(response.headers['content-length'], 10) || 0;
 
         const input = { body: response.body }; // Wrap the stream in an object
 

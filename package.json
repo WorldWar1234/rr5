@@ -8,10 +8,10 @@
     "start": "node server2.js" 
   },
   "dependencies": {
-    "fastify": "^4.28.1",
-    "undici": "6.x",
-    "lodash": "^4.17.21",
-    "sharp": "^0.33.5"
+    "fastify": "4.28.1",
+    "undici": "6.19.8",
+    "lodash": "4.17.21",
+    "sharp": "0.33.5"
   },
   "engines": {
     "node": "20.x",

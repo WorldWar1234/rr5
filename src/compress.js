@@ -14,7 +14,8 @@ export async function compressImg(request, reply, input) {
             .toFormat(format, {
                 quality: request.params.quality,
                 progressive: true,
-                optimizeScans: true
+                optimizeScans: true,
+                smartSubsample: false
             });
 
         // Pipe the stream from input.body into the sharp instance

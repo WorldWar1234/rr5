@@ -17,5 +17,6 @@
   "engines": {
     "node": "18.20.4"
   },
-  "type": "module"
+  "type": "module",
+  "packageManager": "yarn@4.4.1"
 }

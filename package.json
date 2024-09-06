@@ -3,19 +3,19 @@
   "version": "2.0",
   "description": "an app",
   "author": "Team1",
-  "license":"AGPL-3.0-only",
+  "license": "AGPL-3.0-only",
   "scripts": {
-    "start": "node server2.js" 
+    "start": "node server2.js"
   },
   "dependencies": {
     "fastify": "4.28.1",
-    "undici": "6.19.8",
     "lodash": "4.17.21",
-    "sharp": "0.33.5"
+    "sharp": "0.33.5",
+    "undici": "6.19.8"
   },
   "engines": {
-    "node": "20.x",
-    "yarn": "1.x"
+    "node": "20.17.0"
   },
-  "type": "module"
+  "type": "module",
+  "packageManager": "yarn@4.4.1"
 }
